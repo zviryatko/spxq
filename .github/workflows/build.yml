@@ -1,0 +1,130 @@
+name: Build & release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  build:
+    name: ${{ matrix.os }} / ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            os: linux
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            os: linux
+            arch: arm64
+          - runner: macos-15-intel
+            os: darwin
+            arch: amd64
+          - runner: macos-15
+            os: darwin
+            arch: arm64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+          cache: true
+      - name: Check formatting and test
+        shell: bash
+        run: |
+          test -z "$(gofmt -l *.go)"
+          go vet ./...
+          go test -race ./...
+      - name: Install static Linux toolchain
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y musl-tools
+      - name: Build and package
+        shell: bash
+        env:
+          TARGET_OS: ${{ matrix.os }}
+          TARGET_ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="$GITHUB_REF_NAME"
+          else
+            VERSION="dev-${GITHUB_SHA:0:7}"
+          fi
+          BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          LDFLAGS="-s -w -X main.version=$VERSION -X main.commit=${GITHUB_SHA:0:7} -X main.buildDate=$BUILD_DATE"
+          export CGO_ENABLED=1 GOOS="$TARGET_OS" GOARCH="$TARGET_ARCH"
+          if [[ "$TARGET_OS" == linux ]]; then
+            export CC=musl-gcc
+            LDFLAGS="$LDFLAGS -linkmode external -extldflags -static"
+          fi
+          mkdir -p dist
+          go build -trimpath -tags sqlite_omit_load_extension -ldflags "$LDFLAGS" -o dist/spxq .
+          dist/spxq --version
+          dist/spxq import examples/demo.json -o "$RUNNER_TEMP/demo.db"
+          dist/spxq tree "$RUNNER_TEMP/demo.db" --depth 2 --limit 5
+          dist/spxq flat "$RUNNER_TEMP/demo.db" --metric zm --limit 5
+          cp README.md LICENSE THIRD_PARTY_NOTICES.md dist/
+          tar -C dist -czf "dist/spxq_${VERSION}_${TARGET_OS}_${TARGET_ARCH}.tar.gz" spxq README.md LICENSE THIRD_PARTY_NOTICES.md
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: spxq-${{ matrix.os }}-${{ matrix.arch }}
+          path: dist/*.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+  minimum-go:
+    name: Minimum Go version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - run: go test ./...
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, minimum-go]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: spxq-*
+          merge-multiple: true
+          path: dist
+      - name: Checksum and publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          cd dist
+          test "$(find . -maxdepth 1 -name '*.tar.gz' | wc -l)" -eq 4
+          sha256sum *.tar.gz > checksums.txt
+          gh release create "$TAG" *.tar.gz checksums.txt --verify-tag --title "$TAG" --generate-notes

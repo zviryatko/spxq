@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">spxq</title>
+  <desc id="desc">A mint call tree inside a dark terminal window, with a magnifying-glass branch.</desc>
+  <rect x="12" y="12" width="232" height="232" rx="52" fill="#101d28"/>
+  <path d="M52 64h152" stroke="#35505d" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="55" cy="43" r="4" fill="#f58b79"/>
+  <circle cx="71" cy="43" r="4" fill="#f0c779"/>
+  <circle cx="87" cy="43" r="4" fill="#74d9b7"/>
+  <g fill="none" stroke="#74e1c1" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M66 95v77q0 12 12 12h29M66 109h41"/>
+    <path d="M124 109h42"/>
+    <circle cx="147" cy="173" r="28"/>
+    <path d="m168 194 25 25"/>
+  </g>
+  <circle cx="66" cy="95" r="8" fill="#74e1c1"/>
+</svg>
