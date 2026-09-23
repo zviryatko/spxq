@@ -203,7 +203,7 @@ func run(ctx context.Context, args []string, out, errout io.Writer) error {
 			if i >= *limit {
 				break
 			}
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%.3fs\t%.1fMiB\t%s\n", strings.TrimSuffix(filepath.Base(r.path), ".json"), time.Unix(r.m.Timestamp, 0).Format("2006-01-02 15:04"), clean(r.m.Host), clean(r.m.target()), count(r.m.Calls), r.m.Wall/1000, float64(r.size)/1048576, clean(r.m.Custom))
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%.3fs\t%.1fMiB\t%s\n", strings.TrimSuffix(filepath.Base(r.path), ".json"), time.Unix(r.m.Timestamp, 0).Format("2006-01-02 15:04"), clean(r.m.Host), clean(r.m.target()), count(r.m.Calls), r.m.Wall/1e6, float64(r.size)/1048576, clean(r.m.Custom))
 		}
 		return w.Flush()
 	case "import":

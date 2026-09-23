@@ -154,7 +154,7 @@ SPX JSON + .txt.gz / .txt.zst / .txt
 
 A node is a `(parent node, function ID)` pair. Inclusive values are end minus start; exclusive values subtract direct children. Flat inclusive totals count only the outermost active invocation of each function, avoiding recursive double counting. Caller queries sum matching call edges, so overlapping recursive edges can contribute more than once.
 
-The importer retains all recorded metrics as 64-bit floating-point values. Time metrics are microseconds, memory metrics are bytes, and counters remain counts. Negative and fractional metric values are supported. Schema 2 uses SQLite REAL columns; schema 1 integer databases remain readable.
+The importer retains all recorded metrics as 64-bit floating-point values. Time metrics are nanoseconds (the metadata field `wall_time_ms` contains microseconds), memory metrics are bytes, and counters remain counts. Negative and fractional metric values are supported. Schema 2 uses SQLite REAL columns; schema 1 integer databases remain readable.
 
 Memory use depends on the active stack, a 100,000-path lookup cache, a 200,000-event aggregation batch, and SQLite's page cache. Database size depends on unique paths and metric count. The viewer loads expanded pages; flat/search queries scan the aggregate index. Individual invocation/timeline views are not included.
 

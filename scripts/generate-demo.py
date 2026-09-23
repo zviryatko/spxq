@@ -15,6 +15,7 @@ calls = 0
 
 def emit(name, own, children=(), repeat=1, retained=0):
     global clock, memory, calls
+    own *= 1000  # Input durations are specified in microseconds; SPX stores nanoseconds.
     fid = ids.setdefault(name, len(ids))
     if fid == len(functions):
         functions.append(name)
@@ -78,4 +79,4 @@ metadata = dict(
 (ROOT / "examples").mkdir(exist_ok=True)
 (ROOT / "examples/demo.json").write_text(json.dumps(metadata, indent=2) + "\n")
 (ROOT / "examples/demo.txt.gz").write_bytes(gzip.compress(body.encode(), mtime=0))
-print(f"Synthetic demo: {calls:,} calls, {len(functions)} functions, {clock / 1e6:.3f}s")
+print(f"Synthetic demo: {calls:,} calls, {len(functions)} functions, {clock / 1e9:.3f}s")

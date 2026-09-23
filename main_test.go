@@ -54,3 +54,22 @@ func TestVersion(t *testing.T) {
 		}
 	}
 }
+
+func TestReportDuration(t *testing.T) {
+	dir := t.TempDir()
+	// Despite its name, SPX's wall_time_ms metadata is in microseconds.
+	meta := `{"enabled_metrics":["wt"],"wall_time_ms":1349258291}`
+	if err := os.WriteFile(filepath.Join(dir, "sample.json"), []byte(meta), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "sample.txt"), nil, 0600); err != nil {
+		t.Fatal(err)
+	}
+	var out, stderr bytes.Buffer
+	if err := run(context.Background(), []string{"reports", "--dir", dir}, &out, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "1349.258s") {
+		t.Fatalf("incorrect report duration: %s", out.String())
+	}
+}

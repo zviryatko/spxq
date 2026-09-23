@@ -21,7 +21,7 @@ type metadata struct {
 	Key       string   `json:"key"`
 	Metrics   []string `json:"enabled_metrics"`
 	Calls     int64    `json:"recorded_call_count"`
-	Wall      float64  `json:"wall_time_ms"`
+	Wall      float64  `json:"wall_time_ms"` // SPX stores microseconds despite the field name.
 	Timestamp int64    `json:"exec_ts"`
 	Custom    string   `json:"custom_metadata_str"`
 	Host      string   `json:"host_name"`

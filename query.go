@@ -188,15 +188,17 @@ func decimalValue(v float64) string {
 func formatValue(v float64, metric string) string {
 	switch metric {
 	case "wt", "ct", "it":
-		// SPX reports cumulative time in microseconds (metadata divides by 1000).
-		a := float64(v)
-		if a >= 1e6 || a <= -1e6 {
-			return fmt.Sprintf("%.3fs", a/1e6)
+		// SPX event time metrics are nanoseconds.
+		if v >= 1e9 || v <= -1e9 {
+			return fmt.Sprintf("%.3fs", v/1e9)
 		}
-		if a >= 1e3 || a <= -1e3 {
-			return fmt.Sprintf("%.2fms", a/1e3)
+		if v >= 1e6 || v <= -1e6 {
+			return fmt.Sprintf("%.2fms", v/1e6)
 		}
-		return decimalValue(v) + "µs"
+		if v >= 1e3 || v <= -1e3 {
+			return decimalValue(v/1e3) + "µs"
+		}
+		return decimalValue(v) + "ns"
 	case "zm", "zmab", "zmfb", "mor", "rss", "io", "ior", "iow":
 		if v >= 1048576 || v <= -1048576 {
 			return fmt.Sprintf("%.2fMiB", float64(v)/1048576)

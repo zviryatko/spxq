@@ -198,9 +198,37 @@ func TestUnits(t *testing.T) {
 	for _, c := range []struct {
 		v       float64
 		m, want string
-	}{{181167027, "wt", "181.167s"}, {1000, "ct", "1.00ms"}, {-5, "it", "-5µs"}, {1024, "zmab", "1.00KiB"}, {1024, "zmac", "1024"}} {
+	}{{181167027000, "wt", "181.167s"}, {1000000, "ct", "1.00ms"}, {-5000, "it", "-5µs"}, {1024, "zmab", "1.00KiB"}, {1024, "zmac", "1024"}} {
 		if got := formatValue(c.v, c.m); got != c.want {
 			t.Fatalf("%s: %s != %s", c.m, got, c.want)
+		}
+	}
+}
+
+func TestTimeUnits(t *testing.T) {
+	for _, metric := range []string{"wt", "ct", "it"} {
+		for _, c := range []struct {
+			value float64
+			want  string
+		}{
+			{0, "0ns"},
+			{0.125, "0.125ns"},
+			{999, "999ns"},
+			{1000, "1µs"},
+			{1250, "1.25µs"},
+			{999999, "999.999µs"},
+			{1000000, "1.00ms"},
+			{1000000000, "1.000s"},
+			{1349258291000, "1349.258s"},
+		} {
+			if got := formatValue(c.value, metric); got != c.want {
+				t.Errorf("%s(%g): got %s, want %s", metric, c.value, got, c.want)
+			}
+			if c.value != 0 {
+				if got := formatValue(-c.value, metric); got != "-"+c.want {
+					t.Errorf("%s(%g): got %s, want -%s", metric, -c.value, got, c.want)
+				}
+			}
 		}
 	}
 }
@@ -276,7 +304,7 @@ func TestFractionalMetrics(t *testing.T) {
 		t.Fatal(err)
 	}
 	near(e.values[1], -1631.9999)
-	if got := formatValue(.125, "wt"); got != "0.125µs" {
+	if got := formatValue(.125, "wt"); got != "0.125ns" {
 		t.Fatal(got)
 	}
 	if got := formatValue(-.125, "zm"); got != "-0.125B" {
