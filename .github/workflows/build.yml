@@ -82,7 +82,7 @@ jobs:
           dist/spxq flat "$RUNNER_TEMP/demo.db" --metric zm --limit 5
           cp README.md LICENSE THIRD_PARTY_NOTICES.md dist/
           tar -C dist -czf "dist/spxq_${VERSION}_${TARGET_OS}_${TARGET_ARCH}.tar.gz" spxq README.md LICENSE THIRD_PARTY_NOTICES.md
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: spxq-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/*.tar.gz
